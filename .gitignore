@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Deployment automation specific
+target-project/
+portfolio/
+temp/
+tmp/
+
+# Cache
+.cache/
+*.tsbuildinfo
+
+# Local secrets (backup protection)
+secrets.json
+tokens.json
+local-*.json
