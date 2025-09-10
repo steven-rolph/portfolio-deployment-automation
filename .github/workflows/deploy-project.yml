@@ -1,0 +1,155 @@
+name: 🚀 Deploy Personal Project
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Repository to deploy (username/repo-name)'
+        required: true
+        type: string
+      branch:
+        description: 'Branch to deploy'
+        required: false
+        default: 'main'
+        type: string
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - preview
+      force_update_portfolio:
+        description: 'Force update portfolio even if project exists'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout deployment automation
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install automation dependencies
+      run: npm ci
+
+    - name: Checkout target project
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.repository }}
+        ref: ${{ inputs.branch }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        path: ./target-project
+
+    - name: Load and validate project config
+      id: config
+      run: |
+        cd target-project
+        
+        # Check if deployment config exists
+        if [ ! -f "deployment-config.json" ]; then
+          echo "❌ deployment-config.json not found in ${{ inputs.repository }}"
+          exit 1
+        fi
+        
+        # Validate and extract config
+        node ../scripts/utils.js validate-config deployment-config.json
+        
+        PROJECT_NAME=$(jq -r '.projectName' deployment-config.json)
+        DOMAIN=$(jq -r '.domain // empty' deployment-config.json)
+        DESCRIPTION=$(jq -r '.description' deployment-config.json)
+        
+        echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+        echo "domain=$DOMAIN" >> $GITHUB_OUTPUT
+        echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
+        echo "repository=${{ inputs.repository }}" >> $GITHUB_OUTPUT
+        
+        echo "✅ Config loaded for: $PROJECT_NAME"
+
+    - name: Install project dependencies
+      run: |
+        cd target-project
+        if [ -f "package-lock.json" ]; then
+          npm ci
+        elif [ -f "yarn.lock" ]; then
+          yarn install --frozen-lockfile
+        elif [ -f "pnpm-lock.yaml" ]; then
+          pnpm install --frozen-lockfile
+        else
+          npm install
+        fi
+
+    - name: Build project
+      run: |
+        cd target-project
+        npm run build
+
+    - name: Deploy to Vercel
+      id: vercel_deploy
+      run: |
+        cd target-project
+        node ../scripts/deploy-vercel.js \
+          --project-name "${{ steps.config.outputs.project_name }}" \
+          --environment "${{ inputs.environment }}" \
+          --github-repo "${{ inputs.repository }}" \
+          --github-sha "${{ github.sha }}"
+
+    - name: Configure custom domain
+      if: steps.config.outputs.domain != ''
+      run: |
+        node scripts/configure-dns.js \
+          --project-name "${{ steps.config.outputs.project_name }}" \
+          --domain "${{ steps.config.outputs.domain }}" \
+          --vercel-token "${{ secrets.VERCEL_TOKEN }}" \
+          --cloudflare-token "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+
+    - name: Update portfolio
+      run: |
+        node scripts/update-portfolio.js \
+          --config-file "./target-project/deployment-config.json" \
+          --repository "${{ steps.config.outputs.repository }}" \
+          --domain "${{ steps.config.outputs.domain }}" \
+          --portfolio-repo "${{ secrets.PORTFOLIO_REPO }}" \
+          --github-token "${{ secrets.GITHUB_TOKEN }}" \
+          --force-update "${{ inputs.force_update_portfolio }}"
+
+    - name: 📋 Deployment Summary
+      run: |
+        echo "## 🚀 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Project:** ${{ steps.config.outputs.project_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Repository:** ${{ inputs.repository }}" >> $GITHUB_STEP_SUMMARY
+        if [ -n "${{ steps.config.outputs.domain }}" ]; then
+          echo "**Custom Domain:** https://${{ steps.config.outputs.domain }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "**Environment:** ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ All systems updated automatically!"
+
+    - name: ❌ Cleanup on failure
+      if: failure()
+      run: |
+        echo "## ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Repository:** ${{ inputs.repository }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Check logs above for details. Common issues:" >> $GITHUB_STEP_SUMMARY
+        echo "- Missing or invalid deployment-config.json" >> $GITHUB_STEP_SUMMARY
+        echo "- Build failures in target project" >> $GITHUB_STEP_SUMMARY
+        echo "- Invalid API tokens" >> $GITHUB_STEP_SUMMARY
+        echo "- DNS/domain configuration issues" >> $GITHUB_STEP_SUMMARY
