@@ -51,7 +51,7 @@ jobs:
       with:
         repository: ${{ inputs.repository }}
         ref: ${{ inputs.branch }}
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         path: ./target-project
 
     - name: Load and validate project config
@@ -123,7 +123,7 @@ jobs:
           --repository "${{ steps.config.outputs.repository }}" \
           --domain "${{ steps.config.outputs.domain }}" \
           --portfolio-repo "${{ secrets.PORTFOLIO_REPO }}" \
-          --github-token "${{ secrets.GITHUB_TOKEN }}" \
+          --github-token "${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
           --force-update "${{ inputs.force_update_portfolio }}"
 
     - name: 📋 Deployment Summary
