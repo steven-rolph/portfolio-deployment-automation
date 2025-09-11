@@ -10,9 +10,9 @@ async function updatePortfolio(configFile, repository, domain, portfolioRepo, gi
     execSync(`git clone https://${githubToken}@github.com/${portfolioRepo}.git portfolio`, { stdio: 'inherit' });
     
     process.chdir('portfolio');
-    
-    execSync('git config user.name "Deployment Bot"');
-    execSync('git config user.email "deployment-bot@github-actions.com"');
+      
+    execSync('git config user.name "github-actions[bot]"');
+    execSync('git config user.email "github-actions[bot]@users.noreply.github.com"');
     
     const projectData = {
       name: config.projectName,
