@@ -1,0 +1,17 @@
+name: Test Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test step
+        run: echo "Hello World! GitHub Actions is working!"
+      
+      - name: Check environment
+        run: |
+          echo "Runner: ${{ runner.os }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
