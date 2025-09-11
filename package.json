@@ -1,8 +1,12 @@
 {
-  "name": "portfolio-deployment-automation",
+  "name": "deployment-automation",
+  "version": "1.0.0",
   "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  },
   "dependencies": {
-    "axios": "^1.6.0",
-    "@vercel/node": "^3.0.0"
+    "axios": "^1.6.0"
   }
 }
