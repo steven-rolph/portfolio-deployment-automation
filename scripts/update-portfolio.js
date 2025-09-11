@@ -7,6 +7,21 @@ async function updatePortfolio(configFile, repository, domain, portfolioRepo, gi
     
     const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
     
+    // Fetch repository creation date from GitHub API
+    console.log('🔍 Fetching repository metadata...');
+    const repoResponse = await fetch(`https://api.github.com/repos/${repository}`, {
+      headers: {
+        'Authorization': `token ${githubToken}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    
+    if (!repoResponse.ok) {
+      throw new Error(`Failed to fetch repository data: ${repoResponse.status} ${repoResponse.statusText}`);
+    }
+    
+    const repoData = await repoResponse.json();
+    
     execSync(`git clone https://${githubToken}@github.com/${portfolioRepo}.git portfolio`, { stdio: 'inherit' });
     
     process.chdir('portfolio');
@@ -19,6 +34,7 @@ async function updatePortfolio(configFile, repository, domain, portfolioRepo, gi
       description: config.description,
       url: domain ? `https://${domain}` : null,
       github: repository,
+      createdAt: repoData.created_at,
       deployedAt: new Date().toISOString(),
       techStack: config.techStack || [],
       category: config.category || 'web-app',
