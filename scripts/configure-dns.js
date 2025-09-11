@@ -21,6 +21,25 @@ async function configureDNS(projectName, domain, vercelToken, cloudflareToken) {
     );
     console.log(`✅ Added domain to Vercel: ${domain}`);
 
+    let specificCname = 'cname.vercel-dns.com'; // fallback
+    try {
+      const domainResponse = await axios.get(
+        `https://api.vercel.com/v9/projects/${projectName}/domains/${domain}`,
+        {
+          headers: { 'Authorization': `Bearer ${vercelToken}` }
+        }
+      );
+      
+      if (domainResponse.data.cname) {
+        specificCname = domainResponse.data.cname;
+        console.log(`🎯 Using specific CNAME: ${specificCname}`);
+      } else {
+        console.log('ℹ️ Using generic CNAME as fallback');
+      }
+    } catch (cnameError) {
+      console.log('ℹ️ Could not get specific CNAME, using generic fallback');
+    }
+
     const zone = domain.split('.').slice(-2).join('.');
     const subdomain = domain.replace(`.${zone}`, '');
     
@@ -41,7 +60,7 @@ async function configureDNS(projectName, domain, vercelToken, cloudflareToken) {
       {
         type: 'CNAME',
         name: subdomain,
-        content: 'cname.vercel-dns.com',
+        content: specificCname,
         ttl: 1
       },
       {
@@ -52,7 +71,7 @@ async function configureDNS(projectName, domain, vercelToken, cloudflareToken) {
       }
     );
     
-    console.log(`✅ DNS configured for: ${domain}`);
+    console.log(`✅ DNS configured for: ${domain} → ${specificCname}`);
     
   } catch (error) {
     if (error.response?.status === 409) {
