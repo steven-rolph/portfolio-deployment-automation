@@ -44,7 +44,10 @@ async function updatePortfolio(configFile, repository, domain, portfolioRepo, gi
     
     execSync('git add .');
     execSync(`git commit -m "🚀 Deploy: ${config.projectName}"`);
-    execSync('git push origin main');
+    
+    const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
+    console.log(`Pushing to branch: ${currentBranch}`);
+    execSync(`git push origin ${currentBranch}`);
     
     console.log('✅ Portfolio updated successfully');
     
