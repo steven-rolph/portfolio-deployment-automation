@@ -17,13 +17,17 @@ try {
     environment === 'production' ? '--prod' : '',
     '--yes',
     `--name "${projectName}"`,
+    `--repo "${githubRepo}"`,
     `--meta githubCommitSha=${githubSha}`,
     `--meta githubRepo=${githubRepo}`
   ].filter(Boolean).join(' ');
   
+  console.log(`Executing: ${deployCommand.replace(process.env.VERCEL_TOKEN, '***')}`);
+  
   const deploymentUrl = execSync(deployCommand, { encoding: 'utf8' }).trim();
   
   console.log(`✅ Deployed to: ${deploymentUrl}`);
+  console.log(`✅ Git repository connected: ${githubRepo}`);
   
 } catch (error) {
   console.error('❌ Vercel deployment failed:', error.message);
