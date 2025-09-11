@@ -1,14 +1,16 @@
-import { readFileSync, existsSync, writeFileSync } from 'fs';
+import fs from 'fs';
 import { execSync } from 'child_process';
 
 async function updatePortfolio(configFile, repository, domain, portfolioRepo, githubToken, forceUpdate) {
   try {
     console.log('📝 Updating portfolio...');
-    const config = JSON.parse(readFileSync(configFile, 'utf8'));
+    
+    const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
     
     execSync(`git clone https://${githubToken}@github.com/${portfolioRepo}.git portfolio`, { stdio: 'inherit' });
     
     process.chdir('portfolio');
+    
     execSync('git config user.name "Deployment Bot"');
     execSync('git config user.email "deployment-bot@github-actions.com"');
     
@@ -23,13 +25,13 @@ async function updatePortfolio(configFile, repository, domain, portfolioRepo, gi
       featured: config.featured || false
     };
     
-    const projectsFile = 'data/projects.json';
+    const projectsFile = 'public/data/projects.json';
     let projects = [];
     
-    if (existsSync(projectsFile)) {
-      projects = JSON.parse(readFileSync(projectsFile, 'utf8'));
+    if (fs.existsSync(projectsFile)) {
+      projects = JSON.parse(fs.readFileSync(projectsFile, 'utf8'));
     } else {
-      execSync('mkdir -p data');
+      execSync('mkdir -p public/data');
     }
     
     projects = projects.filter(p => p.name !== projectData.name);
@@ -38,7 +40,7 @@ async function updatePortfolio(configFile, repository, domain, portfolioRepo, gi
     
     projects.sort((a, b) => new Date(b.deployedAt) - new Date(a.deployedAt));
     
-    writeFileSync(projectsFile, JSON.stringify(projects, null, 2));
+    fs.writeFileSync(projectsFile, JSON.stringify(projects, null, 2));
     
     execSync('git add .');
     execSync(`git commit -m "🚀 Deploy: ${config.projectName}"`);

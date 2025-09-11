@@ -1,4 +1,4 @@
-const fs = require('fs');
+import fs from 'fs';
 
 function validateConfig(configPath) {
   if (!fs.existsSync(configPath)) {
@@ -20,7 +20,7 @@ function validateConfig(configPath) {
   return config;
 }
 
-if (require.main === module) {
+if (process.argv[1] === new URL(import.meta.url).pathname) {
   const [,, command, ...args] = process.argv;
   
   if (command === 'validate-config') {
@@ -28,4 +28,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { validateConfig };
+export { validateConfig };

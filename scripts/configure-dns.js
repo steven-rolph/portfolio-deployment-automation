@@ -1,4 +1,4 @@
-import { post, get } from 'axios';
+import axios from 'axios';
 
 async function configureDNS(projectName, domain, vercelToken, cloudflareToken) {
   if (!domain) {
@@ -9,7 +9,7 @@ async function configureDNS(projectName, domain, vercelToken, cloudflareToken) {
   try {
     console.log(`🔧 Configuring DNS for ${domain}...`);
     
-    await post(
+    await axios.post(
       `https://api.vercel.com/v9/projects/${projectName}/domains`,
       { name: domain },
       {
@@ -24,7 +24,7 @@ async function configureDNS(projectName, domain, vercelToken, cloudflareToken) {
     const zone = domain.split('.').slice(-2).join('.');
     const subdomain = domain.replace(`.${zone}`, '');
     
-    const zoneResponse = await get(
+    const zoneResponse = await axios.get(
       `https://api.cloudflare.com/client/v4/zones?name=${zone}`,
       {
         headers: { 'Authorization': `Bearer ${cloudflareToken}` }
@@ -36,7 +36,7 @@ async function configureDNS(projectName, domain, vercelToken, cloudflareToken) {
       throw new Error(`Could not find Cloudflare zone for: ${zone}`);
     }
 
-    await post(
+    await axios.post(
       `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records`,
       {
         type: 'CNAME',
