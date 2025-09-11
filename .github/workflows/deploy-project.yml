@@ -96,9 +96,21 @@ jobs:
       run: |
         cd target-project
         npm run build
+    - name: Debug Vercel Token
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      run: |
+        echo "Token length: ${#VERCEL_TOKEN}"
+        if [ -z "$VERCEL_TOKEN" ]; then
+          echo "❌ VERCEL_TOKEN is empty or not set"
+        else
+          echo "✅ VERCEL_TOKEN is set"
+        fi
 
     - name: Deploy to Vercel
       id: vercel_deploy
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       run: |
         cd target-project
         node ../scripts/deploy-vercel.js \
